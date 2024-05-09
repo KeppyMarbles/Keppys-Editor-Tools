@@ -3,7 +3,7 @@ A work in progress add-on for PQ that intends to make the level editor more powe
 Sends commands to Python using a localhost server.
 
 ## Install
-1. Install [python](https://www.python.org/downloads/) if you don't have it
+1. Install [Python](https://www.python.org/downloads/)
 2. Download the source code and extract
 3. Place [csx3dif.exe](https://github.com/RandomityGuy/csx3dif/releases) in the folder
 4. Move missions folder into PQ
@@ -17,16 +17,17 @@ Sends commands to Python using a localhost server.
 KET's additions will persist until you close out of the game.
 
 ## Features
-#### Converting CSX Files
+![convertcsx](https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/5b6f1b47-d5e2-4c49-b8c5-b8e9cf40ccc0)
+
 In the level editor, you'll notice a new button next to Change Skybox. This will show a window listing CSX files in any of the interior folders. Select one to convert it into a DIF and add it to the mission.
 
-#### Reconverting
+https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/1db3490e-8b8f-4430-89a2-fa20b5996bc0
 
 ![reconvert](https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/8c4a26b5-1e82-41fb-a0f2-66839054d05f)
 
 In the level building process, you'll make frequent changes to your CSX file in Constructor. After selecting an interior, you can use the Reconvert button to run csx3dif again and replace the old version.
 
-<img src="https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExejIxcHo2amVlaGRpbmI2MmZteTRrejhmaG12NjVxd2cxNXI4ODJrcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/R7bV3LbIlWNMbK4EQ9/giphy.gif">
+https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/53107a87-8438-4e11-9a09-1b23cda31fa2
 
 CSX and DIF files are paired by having the same name and folder. So, if you have `test.dif` in `interiors_mbp/custom`, just have `test.csx` also in `interiors_mbp/custom`.
 
@@ -36,14 +37,14 @@ CSX and DIF files are paired by having the same name and folder. So, if you have
 
 ## Planned or possible features
 
++ Automatic conversion
 + Default interior pack
 + Combining defaults into a single DIF
 + DIF texture replacer
-+ Interior search
 + Sun editing GUI
 + Pathnode tools
 + Selection tools
-+ Simgroup tools
++ SimGroup tools
 + Scaling tools
 + Playtesting tools
 + Autosave
