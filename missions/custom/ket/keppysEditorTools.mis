@@ -87,8 +87,7 @@ function ketConnection::OpenCSX(%this) {
   getLoadFilename("~/data/interiors*/*.csx", "ketConnection.convertCSX");
 }
 
-function ketConnection::convertCSX(%file) {
-  createKETConnection();
+function ketConnection::convertCSX(%this, %file) {
   %this.interiorFile = strreplace(%file, ".csx", ".dif");
   createBlank(%this.interiorFile);
   %this.sendCommand("convertCSX", %file);
