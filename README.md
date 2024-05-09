@@ -4,7 +4,7 @@ Sends commands to Python using a localhost server.
 
 ## Install
 1. Install [Python](https://www.python.org/downloads/)
-2. Download the source code and extract
+2. Download the [release](https://github.com/KeppyMarbles/Keppys-Editor-Tools/releases/tag/v0.1) and extract
 3. Place [csx3dif.exe](https://github.com/RandomityGuy/csx3dif/releases) in the folder
 4. Move missions folder into PQ
 
