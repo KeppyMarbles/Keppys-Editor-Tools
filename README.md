@@ -23,6 +23,8 @@ In the level editor, you'll notice a new button next to Change Skybox. This will
 
 https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/1db3490e-8b8f-4430-89a2-fa20b5996bc0
 
+To use this feature, just have the CSX file you're working on be somewhere in the appropriate interiors folder (`interiors_mbg` if using MBG textures, `interiors_mbp` if using MBP, etc). 
+
 ![reconvert](https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/8c4a26b5-1e82-41fb-a0f2-66839054d05f)
 
 In the level building process, you'll make frequent changes to your CSX file in Constructor. After selecting an interior, you can use the Reconvert button to run csx3dif again and replace the old version.
