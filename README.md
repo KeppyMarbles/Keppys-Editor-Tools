@@ -35,7 +35,7 @@ CSX and DIF files are paired by having the same name and folder. So, if you want
 
 ## Not supported features
 
-+ No handling for split difs yet. This only happens for very large CSX files (16384 or more total faces).
++ No handling for split DIFs yet. This only happens for very large CSX files (16384 or more total faces).
 
 ## Planned or possible features
 
