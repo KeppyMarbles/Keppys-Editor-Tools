@@ -29,7 +29,7 @@ In the level building process, you'll make frequent changes to your CSX file in 
 
 https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/53107a87-8438-4e11-9a09-1b23cda31fa2
 
-CSX and DIF files are paired by having the same name and folder. So, if you have `test.dif` in `interiors_mbp/custom`, just have `test.csx` also in `interiors_mbp/custom`.
+CSX and DIF files are paired by having the same name and folder. So, if you want to reconvert an interior that uses `test.dif` in `interiors_mbp/custom`, just have `test.csx` also in `interiors_mbp/custom`.
 
 ## Not supported features
 
