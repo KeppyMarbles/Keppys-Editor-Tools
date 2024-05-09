@@ -22,7 +22,7 @@ In the level editor, you'll notice a new button next to Change Skybox. This will
 
 #### Reconverting
 
-<img src="https://i.imgur.com/8pCSFBZ.png">
+![reconvert](https://github.com/KeppyMarbles/Keppys-Editor-Tools/assets/147150384/8c4a26b5-1e82-41fb-a0f2-66839054d05f)
 
 In the level building process, you'll make frequent changes to your CSX file in Constructor. After selecting an interior, you can use the Reconvert button to run csx3dif again and replace the old version.
 
@@ -30,7 +30,11 @@ In the level building process, you'll make frequent changes to your CSX file in 
 
 CSX and DIF files are paired by having the same name and folder. So, if you have `test.dif` in `interiors_mbp/custom`, just have `test.csx` also in `interiors_mbp/custom`.
 
-## Planned features
+## Not supported features
+
++ No handling for split difs yet. This only happens for very large CSX files (16384 or more total faces).
+
+## Planned or possible features
 
 + Default interior pack
 + Combining defaults into a single DIF
