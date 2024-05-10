@@ -49,7 +49,7 @@ function ketConnection::sendCommand(%this, %action, %arg1, %arg2) {
     return;
   if(%arg1 $= "")
     %arg1 = "None";
-  %query = "action=" @ %action @ "&args=" @ %arg1 @ "&args=" @ %arg2;
+  %query = strreplace("action=" @ %action @ "&args=" @ %arg1 @ "&args=" @ %arg2, " ", "%20");
   echo("Sending action" SPC %action SPC "with arguments" SPC %arg1 SPC %arg2);
   %this.get("localhost:" @ $ketPort, "", %query);
   %this.action = %action;
