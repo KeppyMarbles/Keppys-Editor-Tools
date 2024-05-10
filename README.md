@@ -1,6 +1,6 @@
 # Keppy's Editor Tools
 A work in progress add-on for PQ that intends to make the level editor more powerful.
-Sends commands to Python using a localhost server.
+Sends commands to Python using HTTPObjects and a localhost server.
 
 ## Install
 1. Install [Python](https://www.python.org/downloads/)
