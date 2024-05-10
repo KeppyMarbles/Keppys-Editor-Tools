@@ -11,7 +11,7 @@ Sends commands to Python using a localhost server.
 ## Usage
 
 1. Run the python server using the .bat file or `python ket.py`
-2. In PQ, click Play on Keppy's Editor Tools (in custom/ket)
+2. In PQ, click Play on Keppy's Editor Tools (in custom/ket by default, but you can move the .mis somewhere else if you want)
 3. Load into the level you want to edit.
 
 KET's additions will persist until you close out of the game.
