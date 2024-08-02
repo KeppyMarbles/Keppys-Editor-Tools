@@ -1,5 +1,5 @@
 # Keppy's Editor Tools
-A project that intends to add useful things to PQ's level editor which can't be done with TorqueScript alone.
+A project that adds useful things to PQ's level editor which can't be done with TorqueScript alone.
 
 Sends commands to Python using TCPObjects and a localhost server.
 
