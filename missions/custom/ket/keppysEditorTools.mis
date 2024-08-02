@@ -1,20 +1,48 @@
-$ketPort = 7654;
+// -----------------Prefs-----------------
 
-// -----------------Specials-----------------
+$ket::Port = 7654;
+
+// -----------------Changelog-----------------
+
+// v0.1 - Added ability to convert and reconvert CSX files from within the level editor.
+// v0.2 - Replaced HTTP with TCP and added an automatic conversion feature.
+//      - Added more error handling.
+
+// -----------------Editor-----------------
 
 package ket {
   function EWorldEditor::buildSpecialNone(%this) {
     Parent::buildSpecialNone(%this);
-    %this.addSpecial("Convert CSX...", "createKETConnection(); ketConnection.OpenCSX();");
+    if($ket::DisablePause)
+      %this.addSpecial("Enable Pause", "$ket::DisablePause = 0; EWorldEditor.clearSpecial(); EWorldEditor.buildSpecialNone();");
+    else
+      %this.addSpecial("Disable Pause", "$ket::DisablePause = 1; EWorldEditor.clearSpecial(); EWorldEditor.buildSpecialNone();");
+    %this.addSpecial("Reconnect KET", "createKetConnection();");
+    %this.addSpecial("Convert CSX...", "ketConnection.OpenCSX();");
   }
   function EWorldEditor::buildSpecialSingle(%this) {
     Parent::buildSpecialSingle(%this);
     if(%this.interiorSelected()) {
-      %this.addSpecial("Reconvert", "createKETConnection(); ketConnection.RemakeInterior();");
+      %this.addSpecial("Remake", "ketConnection.RemakeInterior();");
+      if(%this.getSelectedObject(0)._autoRemakeEnabled)
+        %this.addSpecial("Disable Auto-Remake", "ketConnection.DisableAutoRemake(); EWorldEditor.clearSpecial(); EWorldEditor.buildSpecialSingle();");
+      else
+        %this.addSpecial("Enable Auto-Remake", "ketConnection.EnableAutoRemake(); EWorldEditor.clearSpecial(); EWorldEditor.buildSpecialSingle();");
     }
   }
+  function onMissionEnded() {
+    Parent::onMissionEnded();
+    if(isObject(InteriorWatchArray)) {
+      ketConnection.sendCommand("stopWatchingAll");
+      InteriorWatchArray.delete();
+    }
+  }
+  function escapeFromGame(%val) {
+    Parent::escapeFromGame(%val);
+    if($ket::DisablePause)
+      $gamePaused = false;
+  }
 };
-activatePackage(ket);
 
 function EWorldEditor::interiorSelected(%this) {
   return %this.getSelectionSize() == 1 && %this.getSelectedObject(0).interiorFile !$= "";
@@ -22,37 +50,64 @@ function EWorldEditor::interiorSelected(%this) {
 
 // -----------------ketConnection-----------------
 
-function createKETConnection() {
-  if(isObject(ketConnection))
+function createKetConnection() {
+  if(isObject(ketConnection)) {
+    ketConnection.disconnect();
     ketConnection.delete();
-  
-  new HTTPObject(ketConnection);
-  ketConnection.response = false;
+  }
+  %obj = new TCPObject(ketConnection);
+  %obj.connect("localhost:" @ $ket::Port);
+  %obj.sendCommand("checkConnection");
+}
+
+function ketConnection::onConnected(%this) {
+  %this.sendCommand("checkConnection");
+}
+
+function ketConnection::checkConnectionSuccessful(%this) {
+  messageBoxOK("Success", "Connected with Python server");
+}
+
+function ketConnection::onConnectFailed(%this) {
+  messageBoxOK("No connection", "Couldn't connect to the Python script (make sure you have it open).");
+}
+
+function ketConnection::onDisconnect(%this) {
+  messageBoxOK("KET Disconnected", "The Python server was closed or an error occurred.");
+  if(isObject(InteriorWatchArray)) {
+    for(%i = 0; %i < InteriorWatchArray.getSize(); %i++) {
+      InteriorWatchArray.getEntry(%i)._autoRemakeEnabled = false;
+    }
+    InteriorWatchArray.delete();
+  }
+  %this.delete();
+}
+
+function ketConnection::success(%this) {
+  eval (%this @ "." @ %this.action @ "Successful();");
+}
+
+function ketConnection::error(%this, %message) {
+  messageBoxOK("Error", "From Python:" SPC %message);
 }
 
 function ketConnection::onLine(%this, %line) {
-  %this.response = true;
-  %status = firstWord(%line); 
-  if(%status $= "Success:") {
-    echo(%line);
-    eval (%this @ "." @ %this.action @ "Successful();");
-  }
-  else if (%status $= "Error:") {
-    %error = removeWord(%line, 0);
-    error(%error);
-    messageBoxOK("Error", "From Python:" SPC %error);
+  echo(%line);
+  %status = firstWord(%line);
+  %message = restWords(%line);
+  switch$ (%status) {
+    case "Success:":
+      %this.success();
+    case "Modified:":
+      %this.autoRemake(%message);
+    case "Error:":
+      %this.error(%message);
   }
 }
 
-function ketConnection::sendCommand(%this, %action, %arg1, %arg2) {
-  if(%action $= "")
-    return;
-  if(%arg1 $= "")
-    %arg1 = "None";
-  %query = strreplace("action=" @ %action @ "&args=" @ %arg1 @ "&args=" @ %arg2, " ", "%20");
-  echo("Sending action" SPC %action SPC "with arguments" SPC %arg1 SPC %arg2);
-  %this.get("localhost:" @ $ketPort, "", %query);
+function ketConnection::sendCommand(%this, %action, %arg1) {
   %this.action = %action;
+  %this.send(%action @ "|" @ %arg1);
 }
 
 // -----------------Resource Management-----------------
@@ -71,14 +126,20 @@ function resetFile(%filePath) {
 
 // -----------------Convert CSX-----------------
 
-function findCSX(%interiorFile) {
-  %adjcsx = strreplace(%interiorFile, ".dif", ".csx");
-  if(!isFile(%adjcsx))
-    setModPaths(getModPaths());
+function findCSX(%obj) {
+  if(%obj._csx !$= "")
+    return %obj._csx;
+  
+  %adjcsx = strreplace(%obj.interiorFile, ".dif", ".csx");
   if(!isFile(%adjcsx)) {
-    messageBoxOK("No CSX", "Could not find csx file" SPC %adjcsx @ ".");
-    return;
+    setModPaths(getModPaths());
+    if(!isFile(%adjcsx)) {
+      messageBoxOK("No CSX", "Could not find csx file" SPC %adjcsx @ ".");
+      return;
+    }
   }
+  %obj._csx = %adjcsx;
+  
   return %adjcsx;
 }
 
@@ -88,6 +149,7 @@ function ketConnection::OpenCSX(%this) {
 }
 
 function ketConnection::convertCSX(%this, %file) {
+  %this.noteInterior();
   %this.interiorFile = strreplace(%file, ".csx", ".dif");
   createBlank(%this.interiorFile);
   %this.sendCommand("convertCSX", %file);
@@ -97,18 +159,16 @@ function ketConnection::convertCSXSuccessful(%this) {
   %obj = %this.createInterior();
   EWorldEditor.clearSelection();
   EditorTree.onSelect(%obj);
+  LocalClientConnection.player.setTransform(%this.marbleTransform);
 }
 
 // -----------------Remake-----------------
 
-function difInUse(%obj) {
+function InteriorInstance::fileInUse(%this) {
   for(%i = 0; %i < MissionGroup.getCount(); %i++) {
-    %mobj = MissionGroup.getObject(%i);
-    if(%mobj.getID() == %obj.getID())
-      continue;
-    
-    if(%mobj.interiorFile $= %obj.interiorFile) {
-      messageBoxOK("Error", "The DIF file cannot be modified because it's currently in use by other interiors. (Let me know if you want this changed)");
+    %obj = MissionGroup.getObject(%i);
+    if(%obj.getID() != %this.getID() && %obj.interiorFile $= %this.interiorFile) {
+      messageBoxOK("Error", "The DIF file" SPC fileName(%this.interiorFile) SPC "cannot be modified because it's currently in use by other interiors. (Let me know if you want this changed)");
       return true;
     }
   }
@@ -120,62 +180,100 @@ function ketConnection::noteInterior(%this, %obj) {
   %this.interiorScale = %obj.scale;
   %this.interiorName = %obj.getName();
   %this.interiorFile = %obj.interiorFile;
+  %this.path = %obj.path;
+  %this._autoRemakeEnabled = %obj._autoRemakeEnabled;
+  %this._csx = %obj._csx;
 }
 
 function ketConnection::createInterior(%this) {
   %obj = new InteriorInstance(%this.interiorName) {
     scale = %this.interiorScale;
     interiorFile = %this.interiorFile;
+    path = %this.path;
+    _autoRemakeEnabled = %this._autoRemakeEnabled;
+    _csx = %this._csx;
   };
   %obj.setTransform(%this.interiorTransform);
+  MissionGroup.add(%obj);
+  
+  if(%obj._autoRemakeEnabled)
+    InteriorWatchArray.addEntry(%obj);
+  
+  if(%obj.path !$= "")
+    %obj.moveOnPath(%obj.path);
+  
   return %obj;
 }
 
 function ketConnection::RemakeInterior(%this, %obj) {
+  %this.marbleTransform = LocalClientConnection.player.getTransform();
   if(%obj $= "")
     %obj = EWorldEditor.getSelectedObject(0);
-  
-  if(difInUse(%obj))
-    return;
-  
-  %csx = findCSX(%obj.interiorFile);
-  if(%csx !$= "") {
-    %this.noteInterior(%obj);
-    %obj.delete();
-    resetFile(%this.interiorFile);
-    %this.sendCommand("convertCSX", %csx);
+  if(!%obj.fileInUse()) {
+    %csx = findCSX(%obj);
+    if(%csx !$= "") {
+      if(%obj._autoRemakeEnabled)
+        InteriorWatchArray.removeMatching(%obj);
+      %this.noteInterior(%obj);
+      %obj.delete();
+      resetFile(%this.interiorFile);
+      %this.sendCommand("convertCSX", %csx);
+    }
   }
 }
 
-// -----------------Error Handling-----------------
+// -----------------Auto Remake-----------------
 
-function ketConnection::onDisconnect(%this) {
-  if(!%this.response) {
-    if(%this.action $= "checkConnection")
-      messageBoxOK("No connection", "Couldn't connect to the Python script (make sure you have it open).");
-    else
-      messageBoxOK("Error", "Did not get a response from Python when attempting:" SPC %this.action);
+function ketConnection::EnableAutoRemake(%this) {
+  %obj = EWorldEditor.getSelectedObject(0);
+  if(!%obj.fileInUse()) {
+    %csx = findCSX(%obj);
+    if(%csx !$= "") {
+      %obj._autoRemakeEnabled = true;
+      
+      if(!isObject(InteriorWatchArray))
+        Array(InteriorWatchArray);
+      InteriorWatchArray.addEntry(%obj);
+      
+      %this.sendCommand("watchCSX", %csx);
+    }
   }
-  %this.delete();
 }
 
-function ketConnection::checkConnection(%this) {
-  %this.sendCommand("checkConnection");
+function ketConnection::DisableAutoRemake(%this, %obj) {
+  if(%obj $= "")
+    %obj = EWorldEditor.getSelectedObject(0);
+  %obj._autoRemakeEnabled = false;
+  InteriorWatchArray.removeMatching(%obj);
+  %this.sendCommand("stopWatchingCSX", findCSX(%obj));
 }
 
-function ketConnection::checkConnectionSuccessful(%this) {
-  echo("KET is active");
-}
-
-function testError() {
-  createKETConnection();
-  ketConnection.get("localhost:" @ $ketPort, "", "action=None&args=");
+function ketConnection::autoRemake(%this, %file) {
+  for(%i = 0; %i < InteriorWatchArray.getSize(); %i++) {
+    %obj = InteriorWatchArray.getEntry(%i);
+    if(isObject(%obj)) {
+      %csx = findCSX(%obj);
+      if(%csx $= %file) {
+        %this.RemakeInterior(%obj);
+        %found = true;
+      }
+    }
+    else {
+      InteriorWatchArray.removeEntry(%i);
+      echo("Removed a deleted interior from the watch list");
+      %i--;
+    }
+  }
+  if(!%found) {
+    %this.sendCommand("stopWatchingCSX", %file);
+    messageBoxOK("Note", fileName(%file) SPC "was changed but was not found in this mission, so it has been removed from the watch list.");
+  }
 }
 
 // -----------------Finalize-----------------
 
-createKETConnection();
-ketConnection.checkConnection();
+activatePackage(ket);
+createKetConnection();
 
 return;
 
@@ -183,9 +281,9 @@ return;
 new SimGroup(MissionGroup) {
    new ScriptObject(MissionInfo) {
          artist = "Keppy";
-         desc = "Activates KET." NL "This is the first release, which includes converting CSX files in the editor.";
+         desc = "Activates KET." NL "This is the second release, which includes automatically converting CSX files in the editor.";
          game = "PlatinumQuest";
-         name = "Keppy's Editor Tools v0.1";
+         name = "Keppy's Editor Tools";
          type = "Custom";
    };
 };
