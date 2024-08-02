@@ -58,6 +58,7 @@ function createKetConnection() {
   %obj = new TCPObject(ketConnection);
   %obj.connect("localhost:" @ $ket::Port);
   %obj.sendCommand("checkConnection");
+  %obj.removeWatch();
 }
 
 function ketConnection::onConnected(%this) {
@@ -74,12 +75,7 @@ function ketConnection::onConnectFailed(%this) {
 
 function ketConnection::onDisconnect(%this) {
   messageBoxOK("KET Disconnected", "The Python server was closed or an error occurred.");
-  if(isObject(InteriorWatchArray)) {
-    for(%i = 0; %i < InteriorWatchArray.getSize(); %i++) {
-      InteriorWatchArray.getEntry(%i)._autoRemakeEnabled = false;
-    }
-    InteriorWatchArray.delete();
-  }
+  %this.removeWatch();
   %this.delete();
 }
 
@@ -267,6 +263,15 @@ function ketConnection::autoRemake(%this, %file) {
   if(!%found) {
     %this.sendCommand("stopWatchingCSX", %file);
     messageBoxOK("Note", fileName(%file) SPC "was changed but was not found in this mission, so it has been removed from the watch list.");
+  }
+}
+
+function ketConnection::removeWatch(%this) {
+  if(isObject(InteriorWatchArray)) {
+    for(%i = 0; %i < InteriorWatchArray.getSize(); %i++) {
+      InteriorWatchArray.getEntry(%i)._autoRemakeEnabled = false;
+    }
+    InteriorWatchArray.delete();
   }
 }
 
