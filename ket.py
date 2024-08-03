@@ -70,7 +70,7 @@ def recv_command(conn):
         time_print("Awaiting command...")
         
         try:
-            data = conn.recv(128)
+            data = conn.recv(512)
             if not data:
                 raise Exception
                 
