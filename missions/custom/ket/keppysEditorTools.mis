@@ -56,7 +56,7 @@ function createKetConnection() {
     ketConnection.delete();
   }
   %obj = new TCPObject(ketConnection);
-  %obj.connect("localhost:" @ $ket::Port);
+  %obj.connect("127.0.0.1:" @ $ket::Port);
   %obj.sendCommand("checkConnection");
   %obj.removeWatch();
 }
